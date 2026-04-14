@@ -8,6 +8,8 @@ import java.net.URL;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -34,52 +36,52 @@ public class HelloAWS {
   private final String cloudFrontDomain = "d98njmkt2dxwf.cloudfront.net";
 
   @PostMapping("/upload")
-  public Map<String, String> uploadImage(@RequestParam("image") MultipartFile file, @RequestParam("name") String customName) {
+  @PreAuthorize("hasRole('ImageUploaders')")
+  public Map<String, String> uploadImage(
+      @RequestParam("image") MultipartFile file,
+      @RequestParam("name") String customName,
+      Authentication authentication) {
     try {
-      // 1. Clean the base name (remove .jpg if provided)
+      String username = authentication.getName();
       String baseName = customName.toLowerCase().endsWith(".jpg")
           ? customName.substring(0, customName.length() - 4)
           : customName;
 
-      // 2. Logic to find the next version (v1, v2, etc.)
       int version = 1;
       boolean exists = true;
-      String finalFileName = "";
+      String finalS3Key = "";
 
-      // Check S3 for existing files starting with this name to determine the version
       while (exists) {
-        finalFileName = baseName + "_v" + version + ".jpg";
+        finalS3Key = username + "/" + baseName + "_v" + version + ".jpg";
         try {
           s3Client.headObject(HeadObjectRequest.builder()
               .bucket(bucketName)
-              .key(finalFileName)
+              .key(finalS3Key)
               .build());
-          version++; // If no error, file exists, try next version
+          version++;
         } catch (S3Exception e) {
           if (e.statusCode() == 404) {
-            exists = false; // File doesn't exist, we found our version!
+            exists = false;
           } else {
             throw e;
           }
         }
       }
 
-      // 3. Upload the NEW version
       byte[] bytes = file.getBytes();
       s3Client.putObject(PutObjectRequest.builder()
               .bucket(bucketName)
-              .key(finalFileName)
+              .key(finalS3Key)
               .contentType("image/jpeg")
               .build(),
           RequestBody.fromBytes(bytes));
 
-      // 4. Return the NEW URL (CloudFront sees this as a new file instantly)
-      String finalUrl = "https://" + cloudFrontDomain + "/" + finalFileName;
-
-      String thumbUrl = "https://" + cloudFrontDomain + "/thumbnails/" + finalFileName;
+      String finalUrl = "https://" + cloudFrontDomain + "/" + finalS3Key;
+      String thumbUrl = "https://" + cloudFrontDomain + "/thumbnails/" + finalS3Key;
 
       return Map.of(
-          "message", "Uploaded as new version: " + "v" + version,
+          "message", "Uploaded to private folder: " + username,
+          "version", "v" + version,
           "url", finalUrl,
           "thumbnailUrl", thumbUrl,
           "status", "Success"

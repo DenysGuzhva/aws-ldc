@@ -1,6 +1,7 @@
 package com.dp.awsldc;
 
-import java.security.Principal;
+import java.util.Map;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -8,8 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
   @GetMapping("/me")
-  public String getUsername(Principal principal) {
-    if (principal == null) return "Unknown User";
-    return principal.getName();
+  public Map<String, String> getMe(Authentication authentication) {
+    return Map.of("username", authentication.getName());
   }
 }
