@@ -20,31 +20,30 @@ dependencyManagement {
 }
 
 dependencies {
-    // 1. Web & Security (Corrected names for v3.3.4)
+    // 1. Core Data (Database & Cache)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // 2. Web & Security
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-    // 2. Cloud & AWS "Vault" logic
+    // 3. AWS & Cloud Config
     implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap'
     implementation 'io.awspring.cloud:spring-cloud-aws-starter-parameter-store'
 
-    // 3. AWS SDKs
+    // 4. AWS SDKs
     implementation platform('software.amazon.awssdk:bom:2.20.0')
     implementation 'software.amazon.awssdk:s3'
     implementation 'software.amazon.awssdk:s3-transfer-manager'
     implementation 'software.amazon.awssdk:cloudfront'
 
-    // 4. Utils
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
     implementation 'ca.pjer:logback-awslogs-appender:1.6.0'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    implementation 'io.awspring.cloud:spring-cloud-aws-starter-parameter-store:3.1.1'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 }
